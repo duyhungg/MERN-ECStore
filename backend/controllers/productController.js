@@ -10,14 +10,21 @@ exports.newProduct = catchAsyncErrors(async (req, res, next) => {
     product,
   });
 });
-
+// Get single product details   =>   /api/v1/products?keyword=value
 exports.getProducts = catchAsyncErrors(async (req, res, next) => {
-  const apiFeatures = new APIFeatures(Product.find(), req.query).search();
+  const resPerPage = 4;
 
+  const productsCount = await Product.countDocuments();
+
+  const apiFeatures = new APIFeatures(Product.find(), req.query)
+    .search()
+    .filter()
+    .pagination(resPerPage);
   const product = await apiFeatures.query;
   res.status(200).json({
     success: true,
     count: product.length,
+    productsCount,
     product,
   });
 });
@@ -41,6 +48,7 @@ exports.getSingleProduct = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler(error.message, 400));
   }
 });
+
 exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
   try {
     let product = await Product.findById(req.params.id);
