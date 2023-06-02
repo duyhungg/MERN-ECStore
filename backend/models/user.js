@@ -81,5 +81,17 @@ userSchema.methods.getResetPasswordToken = function () {
 
   return resetToken;
 };
-
+// tao ra token quen pass
+userSchema.methods.getResetPasswordToken = function () {
+  // generate token
+  const resetToken = crypto.randomBytes(20).toString("hex");
+  // has and set to token
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  // set token expire time
+  this.resetPasswordExpire = Date.now() + 30 * 60 * 10000;
+  return resetToken.toString();
+};
 module.exports = mongoose.model("User", userSchema);
