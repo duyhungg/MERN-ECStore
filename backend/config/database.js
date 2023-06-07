@@ -5,6 +5,7 @@ const connectDatabase = () => {
     .connect(process.env.DB_LOCAL_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      //family: 4 // Use IPv4, skip trying IPv6
     })
     .then((con) => {
       console.log(
