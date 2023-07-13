@@ -1,5 +1,5 @@
 import React, { Fragment, useState, useEffect } from "react";
-
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import MetaData from "../layout/MetaData";
 
 import { useAlert } from "react-alert";
@@ -21,14 +21,15 @@ const Register = ({ history }) => {
   );
   const alert = useAlert();
   const dispatch = useDispatch();
-
+  const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, error, loading } = useSelector(
     (state) => state.auth
   );
-
+  const redirect = location.search ? location.search.split("=")[1] : "";
   useEffect(() => {
     if (isAuthenticated) {
-      history.push("/");
+      navigate(`/${redirect}`);
     }
 
     if (error) {
