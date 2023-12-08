@@ -35,7 +35,7 @@ export const login = (email, password) => async (dispatch) => {
       },
     };
     const { data } = await axios.post(
-      "/api/v1/login",
+      "https://auth-server-fmp.vercel.app/auth/login",
       { email, password },
       config
     );
