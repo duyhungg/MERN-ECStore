@@ -1,27 +1,55 @@
-const express = require("express");
+import express from "express";
 const app = express();
-const errorMiddleware = require("./middlewares/errors");
-const cookieParser = require("cookie-parser");
-const bodyParser = require("body-parser");
-const cloudinary = require("cloudinary");
-const fileUpload = require("express-fileupload");
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import { connectDatabase } from "./config/database.js";
+import errorMiddleware from "./middlewares/errors.js";
 
-// app.js
+// Handle Uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.log(`ERROR: ${err}`);
+  console.log("Shutting down due to uncaught expection");
+  process.exit(1);
+});
 
-app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+dotenv.config({ path: "backend/config/config.env" });
+
+// Connecting to database
+connectDatabase();
+
+app.use(
+  express.json({
+    limit: "10mb",
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString();
+    },
+  })
+);
 app.use(cookieParser());
-app.use(fileUpload());
 
-// import all route
-const products = require("./routes/product");
-const auth = require("./routes/auth");
-const order = require("./routes/order");
+// Import all routes
+import productRoutes from "./routes/product.js";
+import authRoutes from "./routes/auth.js";
+import orderRoutes from "./routes/order.js";
 
-app.use("/api/v1", products);
-app.use("/api/v1", auth);
-app.use("/api/v1", order);
+app.use("/api/v1", productRoutes);
+app.use("/api/v1", authRoutes);
+app.use("/api/v1", orderRoutes);
 
-// middleware su ly loi
+// Using error middleware
 app.use(errorMiddleware);
-module.exports = app;
+
+const server = app.listen(process.env.PORT, () => {
+  console.log(
+    `Server started on PORT: ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+  );
+});
+
+//Handle Unhandled Promise rejections
+process.on("unhandledRejection", (err) => {
+  console.log(`ERROR: ${err}`);
+  console.log("Shutting down server due to Unhandled Promise Rejection");
+  server.close(() => {
+    process.exit(1);
+  });
+});
