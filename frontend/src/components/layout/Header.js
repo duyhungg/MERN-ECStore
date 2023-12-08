@@ -1,98 +1,109 @@
-import React, { Fragment, useCallback } from "react";
+import React from "react";
 import Search from "./Search";
-import { Link, useHistory } from "react-router-dom";
-import { Route } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { useAlert } from "react-alert";
-import { logout } from "../../actions/userActions";
+import { useGetMeQuery } from "../../redux/api/userApi";
+import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { useLazyLogoutQuery } from "../../redux/api/authApi";
+
 const Header = () => {
-  const alert = useAlert();
-  const dispatch = useDispatch();
-  const { user, loading } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  const { isLoading } = useGetMeQuery();
+  const [logout] = useLazyLogoutQuery();
+
+  const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.cart);
 
   const logoutHandler = () => {
-    dispatch(logout());
-    alert.success("logout successfully");
+    logout();
+    navigate(0);
   };
+
   return (
-    <Fragment>
-      <nav className="navbar row">
-        <div className="col-12 col-md-3">
-          <div className="navbar-brand">
-            <Link to="/">
-              <img src="./images/logo.png" />
-            </Link>
-          </div>
+    <nav className="navbar row">
+      <div className="col-12 col-md-3 ps-5">
+        <div className="navbar-brand">
+          <a href="/">
+            <img src="/images/shopit_logo.png" alt="ShopIT Logo" />
+          </a>
         </div>
-        <div className="col-12 col-md-6 mt-2 mt-md-0">
-          <Search />
-        </div>
+      </div>
+      <div className="col-12 col-md-6 mt-2 mt-md-0">
+        <Search />
+      </div>
+      <div className="col-12 col-md-3 mt-4 mt-md-0 text-center">
+        <a href="/cart" style={{ textDecoration: "none" }}>
+          <span id="cart" className="ms-3">
+            {" "}
+            Cart{" "}
+          </span>
+          <span className="ms-1" id="cart_count">
+            {cartItems?.length}
+          </span>
+        </a>
 
-        <div className="col-12 col-md-3 mt-4 mt-md-0 text-center">
-          <Link to="/cart" style={{ textDecoration: "none" }}>
-            <span id="cart" className="ml-3">
-              Cart
-            </span>
-            <span className="ml-1" id="cart_count">
-              {cartItems.length}
-            </span>
-          </Link>
-          {user ? (
-            <div className="ml-4 dropdown d-inline">
+        {user ? (
+          <div className="ms-4 dropdown">
+            <button
+              className="btn dropdown-toggle text-white"
+              type="button"
+              id="dropDownMenuButton"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <figure className="avatar avatar-nav">
+                <img
+                  src={
+                    user?.avatar
+                      ? user?.avatar?.url
+                      : "/images/default_avatar.jpg"
+                  }
+                  alt="User Avatar"
+                  className="rounded-circle"
+                />
+              </figure>
+              <span>{user?.name}</span>
+            </button>
+            <div
+              className="dropdown-menu w-100"
+              aria-labelledby="dropDownMenuButton"
+            >
+              {user?.role === "admin" && (
+                <Link className="dropdown-item" to="/admin/dashboard">
+                  {" "}
+                  Dashboard{" "}
+                </Link>
+              )}
+
+              <Link className="dropdown-item" to="/me/orders">
+                {" "}
+                Orders{" "}
+              </Link>
+
+              <Link className="dropdown-item" to="/me/profile">
+                {" "}
+                Profile{" "}
+              </Link>
+
               <Link
-                to="#!"
-                className="btn dropdown-toggle text-white mr-4"
-                type="button"
-                id="dropDownMenuButton"
-                data-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false"
+                className="dropdown-item text-danger"
+                to="/"
+                onClick={logoutHandler}
               >
-                <figure className="avatar avatar-nav">
-                  <img
-                    src={user.avatar && user.avatar.url}
-                    alt={user && user.name}
-                    className="rounded-circle"
-                  />
-                </figure>
-                <span>{user && user.name}</span>
+                Logout{" "}
               </Link>
-
-              <div
-                className="dropdown-menu"
-                aria-labelledby="dropDownMenuButton"
-              >
-                {user && user.role === "admin" && (
-                  <Link className="dropdown-item" to="/dashboard">
-                    Dashboard
-                  </Link>
-                )}
-                <Link className="dropdown-item" to="/orders/me">
-                  Orders
-                </Link>
-                <Link className="dropdown-item" to="/me">
-                  Profile
-                </Link>
-                <Link
-                  className="dropdown-item text-danger"
-                  to="/"
-                  onClick={logoutHandler}
-                >
-                  Logout
-                </Link>
-              </div>
             </div>
-          ) : (
-            !loading && (
-              <Link to="/login" className="btn ml-4" id="login_btn">
-                Login
-              </Link>
-            )
-          )}
-        </div>
-      </nav>
-    </Fragment>
+          </div>
+        ) : (
+          !isLoading && (
+            <Link to="/login" className="btn ms-4" id="login_btn">
+              {" "}
+              Login{" "}
+            </Link>
+          )
+        )}
+      </div>
+    </nav>
   );
 };
 

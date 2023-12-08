@@ -1,59 +1,52 @@
-import React, { Fragment, useState, useEffect } from "react";
-
+import React, { useEffect, useState } from "react";
+import { useUpdatePasswordMutation } from "../../redux/api/userApi";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import UserLayout from "../layout/UserLayout";
 import MetaData from "../layout/MetaData";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { useAlert } from "react-alert";
-import { useDispatch, useSelector } from "react-redux";
-import { updatePassword, clearError } from "../../actions/userActions";
-import { UPDATE_PASSWORD_RESET } from "../../constants/userConstants";
-
-const UpdatePassword = ({ history }) => {
+const UpdatePassword = () => {
   const [oldPassword, setOldPassword] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
-  const alert = useAlert();
-  const dispatch = useDispatch();
 
-  const { error, isUpdated, loading } = useSelector((state) => state.user);
+  const navigate = useNavigate();
+
+  const [updatePassword, { isLoading, error, isSuccess }] =
+    useUpdatePasswordMutation();
 
   useEffect(() => {
     if (error) {
-      alert.error(error);
-      dispatch(clearError());
+      toast.error(error?.data?.message);
     }
 
-    if (isUpdated) {
-      alert.success("Password updated successfully");
-
-      navigate("/me");
-
-      dispatch({
-        type: UPDATE_PASSWORD_RESET,
-      });
+    if (isSuccess) {
+      toast.success("Password Updated");
+      navigate("/me/profile");
     }
-  }, [dispatch, alert, error, isUpdated]);
+  }, [error, isSuccess]);
 
   const submitHandler = (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.set("oldPassword", oldPassword);
-    formData.set("password", password);
+    const userData = {
+      oldPassword,
+      password,
+    };
 
-    dispatch(updatePassword(formData));
+    updatePassword(userData);
   };
 
   return (
-    <Fragment>
-      <MetaData title={"Change Password"} />
-
+    <UserLayout>
+      <MetaData title={"Update Password"} />
       <div className="row wrapper">
-        <div className="col-10 col-lg-5">
-          <form className="shadow-lg" onSubmit={submitHandler}>
-            <h1 className="mt-2 mb-5">Update Password</h1>
-            <div className="form-group">
-              <label for="old_password_field">Old Password</label>
+        <div className="col-10 col-lg-8">
+          <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+            <h2 className="mb-4">Update Password</h2>
+            <div className="mb-3">
+              <label htmlFor="old_password_field" className="form-label">
+                Old Password
+              </label>
               <input
                 type="password"
                 id="old_password_field"
@@ -63,8 +56,10 @@ const UpdatePassword = ({ history }) => {
               />
             </div>
 
-            <div className="form-group">
-              <label for="new_password_field">New Password</label>
+            <div className="mb-3">
+              <label htmlFor="new_password_field" className="form-label">
+                New Password
+              </label>
               <input
                 type="password"
                 id="new_password_field"
@@ -76,15 +71,15 @@ const UpdatePassword = ({ history }) => {
 
             <button
               type="submit"
-              className="btn update-btn btn-block mt-4 mb-3"
-              disabled={loading ? true : false}
+              className="btn update-btn w-100"
+              disabled={isLoading}
             >
-              Update Password
+              {isLoading ? "Updating..." : "Update Password"}
             </button>
           </form>
         </div>
       </div>
-    </Fragment>
+    </UserLayout>
   );
 };
 

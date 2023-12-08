@@ -1,215 +1,191 @@
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Carousel } from "react-bootstrap";
-import React, { Fragment, useEffect, useState } from "react";
-import Loading from "../layout/Loading";
-import { useAlert } from "react-alert";
+import { useGetProductDetailsQuery } from "../../redux/api/productsApi";
+import { toast } from "react-hot-toast";
+import Loader from "../layout/Loader";
+import StarRatings from "react-star-ratings";
 import { useDispatch, useSelector } from "react-redux";
-import { getProductDetail, clearError } from "../../actions/productActions";
+import { setCartItem } from "../../redux/features/cartSlice";
 import MetaData from "../layout/MetaData";
-import { addItemToCart } from "../../actions/cartActions";
+import NewReview from "../reviews/NewReview";
+import ListReviews from "../reviews/ListReviews";
 
 const ProductDetails = () => {
+  const params = useParams();
   const dispatch = useDispatch();
-  const alert = useAlert();
-  const { id } = useParams();
-  const [qty, setQty] = useState(1);
-  const { loading, error, product } = useSelector(
-    (state) => state.productDetails
+
+  const [quantity, setQuantity] = useState(1);
+  const [activeImg, setActiveImg] = useState("");
+
+  const { data, isLoading, error, isError } = useGetProductDetailsQuery(
+    params?.id
   );
+  const product = data?.product;
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    dispatch(getProductDetail(id));
-    if (error) {
-      alert.error(error);
-      dispatch(clearError());
-    }
-  }, [dispatch, alert, error, id]);
+    setActiveImg(
+      product?.images[0]
+        ? product?.images[0]?.url
+        : "/images/default_product.png"
+    );
+  }, [product]);
 
-  const addToCart = () => {
-    dispatch(addItemToCart(id, qty));
-    alert.success("add to cart success");
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message);
+    }
+  }, [isError]);
+
+  const increseQty = () => {
+    const count = document.querySelector(".count");
+
+    if (count.valueAsNumber >= product?.stock) return;
+
+    const qty = count.valueAsNumber + 1;
+    setQuantity(qty);
   };
 
-  const decreaseQty = () => {
+  const decreseQty = () => {
     const count = document.querySelector(".count");
 
     if (count.valueAsNumber <= 1) return;
-    const qty = count.valueAsNumber - 1;
-    setQty(qty);
-  };
-  const increaseQty = () => {
-    const count = document.querySelector(".count");
 
-    if (count.valueAsNumber >= product.stock) return;
-    const qty = count.valueAsNumber + 1;
-    setQty(qty);
+    const qty = count.valueAsNumber - 1;
+    setQuantity(qty);
   };
+
+  const setItemToCart = () => {
+    const cartItem = {
+      product: product?._id,
+      name: product?.name,
+      price: product?.price,
+      image: product?.images[0]?.url,
+      stock: product?.stock,
+      quantity,
+    };
+
+    dispatch(setCartItem(cartItem));
+    toast.success("Item added to Cart");
+  };
+
+  if (isLoading) return <Loader />;
 
   return (
-    <Fragment>
-      {loading ? (
-        <Loading />
-      ) : (
-        <Fragment>
-          <MetaData title={product.name} />
-          <div className="row f-flex justify-content-around">
-            <div className="col-12 col-lg-5 img-fluid" id="product_image">
-              <Carousel pause="hover">
-                {product.images &&
-                  product.images.map((image) => (
-                    <Carousel.Item key={image.public_id}>
-                      <img
-                        className="d-block w-100"
-                        src={image.url}
-                        alt={product.title}
-                      />
-                    </Carousel.Item>
-                  ))}
-              </Carousel>
-            </div>
-
-            <div className="col-12 col-lg-5 mt-5">
-              <h3>{product.name}</h3>
-              <p id="product_id">Product # {product._id}</p>
-
-              <hr />
-
-              <div className="rating-outer">
-                <div
-                  className="rating-inner"
-                  style={{ width: `${(product.ratings / 5) * 100}%` }}
-                ></div>
-              </div>
-              <span id="no_of_reviews">({product.numOfReviews} Reviews)</span>
-
-              <hr />
-
-              <p id="product_price">{product.price}VND</p>
-              <div className="stockCounter d-inline">
-                <span className="btn btn-danger minus" onClick={decreaseQty}>
-                  -
-                </span>
-
-                <input
-                  type="number"
-                  className="form-control count d-inline"
-                  value={qty}
-                  readOnly
-                />
-
-                <span className="btn btn-primary plus" onClick={increaseQty}>
-                  +
-                </span>
-              </div>
-              <button
-                type="button"
-                id="cart_btn"
-                className="btn btn-primary d-inline ml-4"
-                disabled={product.stock === 0}
-                onClick={addToCart}
-              >
-                Add to Cart
-              </button>
-
-              <hr />
-
-              <p>
-                Status:{" "}
-                <span
-                  id="stock_status"
-                  className={product.stock > 0 ? "greenColor" : "redColor"}
-                >
-                  {product.stock > 0 ? "In Stock" : "Out of Stock"}
-                </span>
-              </p>
-
-              <hr />
-
-              <h4 className="mt-2">Description:</h4>
-              <p>{product.description}</p>
-              <hr />
-              <p id="product_seller mb-3">
-                Sold by: <strong>{product.seller}</strong>
-              </p>
-
-              <button
-                id="review_btn"
-                type="button"
-                className="btn btn-primary mt-4"
-                data-toggle="modal"
-                data-target="#ratingModal"
-              >
-                Submit Your Review
-              </button>
-
-              <div className="row mt-2 mb-5">
-                <div className="rating w-50">
-                  <div
-                    className="modal fade"
-                    id="ratingModal"
-                    tabIndex="-1"
-                    role="dialog"
-                    aria-labelledby="ratingModalLabel"
-                    aria-hidden="true"
-                  >
-                    <div className="modal-dialog" role="document">
-                      <div className="modal-content">
-                        <div className="modal-header">
-                          <h5 className="modal-title" id="ratingModalLabel">
-                            Submit Review
-                          </h5>
-                          <button
-                            type="button"
-                            className="close"
-                            data-dismiss="modal"
-                            aria-label="Close"
-                          >
-                            <span aria-hidden="true">&times;</span>
-                          </button>
-                        </div>
-                        <div className="modal-body">
-                          <ul className="stars">
-                            <li className="star">
-                              <i className="fa fa-star"></i>
-                            </li>
-                            <li className="star">
-                              <i className="fa fa-star"></i>
-                            </li>
-                            <li className="star">
-                              <i className="fa fa-star"></i>
-                            </li>
-                            <li className="star">
-                              <i className="fa fa-star"></i>
-                            </li>
-                            <li className="star">
-                              <i className="fa fa-star"></i>
-                            </li>
-                          </ul>
-
-                          <textarea
-                            name="review"
-                            id="review"
-                            className="form-control mt-3"
-                          ></textarea>
-
-                          <button
-                            className="btn my-3 float-right review-btn px-4 text-white"
-                            data-dismiss="modal"
-                            aria-label="Close"
-                          >
-                            Submit
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <>
+      <MetaData title={product?.name} />
+      <div className="row d-flex justify-content-around">
+        <div className="col-12 col-lg-5 img-fluid" id="product_image">
+          <div className="p-3">
+            <img
+              className="d-block w-100"
+              src={activeImg}
+              alt={product?.name}
+              width="340"
+              height="390"
+            />
           </div>
-        </Fragment>
+          <div className="row justify-content-start mt-5">
+            {product?.images?.map((img) => (
+              <div className="col-2 ms-4 mt-2">
+                <a role="button">
+                  <img
+                    className={`d-block border rounded p-3 cursor-pointer ${
+                      img.url === activeImg ? "border-warning" : ""
+                    } `}
+                    height="100"
+                    width="100"
+                    src={img?.url}
+                    alt={img?.url}
+                    onClick={(e) => setActiveImg(img.url)}
+                  />
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="col-12 col-lg-5 mt-5">
+          <h3>{product?.name}</h3>
+          <p id="product_id">Product # {product?._id}</p>
+
+          <hr />
+
+          <div className="d-flex">
+            <StarRatings
+              rating={product?.ratings}
+              starRatedColor="#ffb829"
+              numberOfStars={5}
+              name="rating"
+              starDimension="24px"
+              starSpacing="1px"
+            />
+            <span id="no-of-reviews" className="pt-1 ps-2">
+              {" "}
+              ({product?.numOfReviews} Reviews){" "}
+            </span>
+          </div>
+          <hr />
+
+          <p id="product_price">${product?.price}</p>
+          <div className="stockCounter d-inline">
+            <span className="btn btn-danger minus" onClick={decreseQty}>
+              -
+            </span>
+            <input
+              type="number"
+              className="form-control count d-inline"
+              value={quantity}
+              readonly
+            />
+            <span className="btn btn-primary plus" onClick={increseQty}>
+              +
+            </span>
+          </div>
+          <button
+            type="button"
+            id="cart_btn"
+            className="btn btn-primary d-inline ms-4"
+            disabled={product.stock <= 0}
+            onClick={setItemToCart}
+          >
+            Add to Cart
+          </button>
+
+          <hr />
+
+          <p>
+            Status:{" "}
+            <span
+              id="stock_status"
+              className={product?.stock > 0 ? "greenColor" : "redColor"}
+            >
+              {product?.stock > 0 ? "In Stock" : "Out of Stock"}
+            </span>
+          </p>
+
+          <hr />
+
+          <h4 className="mt-2">Description:</h4>
+          <p>{product?.description}</p>
+          <hr />
+          <p id="product_seller mb-3">
+            Sold by: <strong>{product?.seller}</strong>
+          </p>
+
+          {isAuthenticated ? (
+            <NewReview productId={product?._id} />
+          ) : (
+            <div className="alert alert-danger my-5" type="alert">
+              Login to post your review.
+            </div>
+          )}
+        </div>
+      </div>
+      {product?.reviews?.length > 0 && (
+        <ListReviews reviews={product?.reviews} />
       )}
-    </Fragment>
+    </>
   );
 };
 

@@ -1,14 +1,12 @@
-import React, { Fragment } from "react";
+import React from "react";
 
 const Footer = () => {
   return (
-    <Fragment>
-      <footer className="py-1">
-        <p className="text-center mt-1">
-          Shopping Cart - , All Rights Reserved
-        </p>
-      </footer>
-    </Fragment>
+    <footer className="py-1 pt-5">
+      <p className="text-center mt-1 fw-bold">
+        ShopIT - 2020-2023, All Rights Reserved
+      </p>
+    </footer>
   );
 };
 

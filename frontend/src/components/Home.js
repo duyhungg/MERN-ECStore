@@ -1,149 +1,72 @@
-import React, { Fragment, useEffect, useState } from "react";
-import Pagination from "react-js-pagination";
-import Slider from "rc-slider";
-import "rc-slider/assets/index.css";
-
+import React, { useEffect } from "react";
 import MetaData from "./layout/MetaData";
-import Product from "./product/Product.js";
-import Loading from "./layout/Loading";
-
-import { useDispatch, useSelector } from "react-redux";
-import { getProducts } from "../actions/productActions";
-import { useAlert } from "react-alert";
-import { useParams } from "react-router-dom";
-
-const { createSliderWithTooltip } = Slider;
-const Range = createSliderWithTooltip(Slider.Range);
+import { useGetProductsQuery } from "../redux/api/productsApi";
+import ProductItem from "./product/ProductItem";
+import Loader from "./layout/Loader";
+import toast from "react-hot-toast";
+import CustomPagination from "./layout/CustomPagination";
+import { useSearchParams } from "react-router-dom";
+import Filters from "./layout/Filters";
 
 const Home = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [price, setPrice] = useState([1, 1000]);
-  const [category, setCategory] = useState("");
-  const categories = [
-    "Electronics",
-    "Cameras",
-    "Laptops",
-    "Accessories",
-    "Headphones",
-    "Food",
-    "Books",
-    "Clothes/Shoes",
-    "Beauty/Health",
-    "Sports",
-    "Outdoor",
-    "Home",
-  ];
-  const alert = useAlert();
-  const dispatch = useDispatch();
-  const {
-    loading,
-    products,
-    error,
-    productsCount,
-    resPerPage,
-    filteredProductsCount,
-  } = useSelector((state) => state.products);
-  const { keyword } = useParams();
+  let [searchParams] = useSearchParams();
+  const page = searchParams.get("page") || 1;
+  const keyword = searchParams.get("keyword") || "";
+  const min = searchParams.get("min");
+  const max = searchParams.get("max");
+  const category = searchParams.get("category");
+  const ratings = searchParams.get("ratings");
+
+  const params = { page, keyword };
+
+  min !== null && (params.min = min);
+  max !== null && (params.max = max);
+  category !== null && (params.category = category);
+  ratings !== null && (params.ratings = ratings);
+
+  const { data, isLoading, error, isError } = useGetProductsQuery(params);
+
   useEffect(() => {
-    if (error) {
-      return alert.error(error);
+    if (isError) {
+      toast.error(error?.data?.message);
     }
-    dispatch(getProducts(keyword, currentPage, price, category));
-  }, [dispatch, alert, error, keyword, currentPage, price, category]);
+  }, [isError]);
 
-  const setCurrentPageNo = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-  let count = productsCount;
-  if (keyword) {
-    count = filteredProductsCount;
-  }
+  const columnSize = keyword ? 4 : 3;
+
+  if (isLoading) return <Loader />;
+
   return (
-    <Fragment>
-      {loading ? (
-        <Loading />
-      ) : (
-        <Fragment>
-          <MetaData title={"selling"} />
-          <h1 id="products_heading">Latest Products</h1>
+    <>
+      <MetaData title={"Buy Best Products Online"} />
+      <div className="row">
+        {keyword && (
+          <div className="col-6 col-md-3 mt-5">
+            <Filters />
+          </div>
+        )}
+        <div className={keyword ? "col-6 col-md-9" : "col-6 col-md-12"}>
+          <h1 id="products_heading" className="text-secondary">
+            {keyword
+              ? `${data?.products?.length} Products found with keyword: ${keyword}`
+              : "Latest Products"}
+          </h1>
 
-          <section id="products" class="container mt-5">
+          <section id="products" className="mt-5">
             <div className="row">
-              {keyword ? (
-                <Fragment>
-                  <div className="col-6 col-md-3 mt-5 mb-5">
-                    <div className="px-5">
-                      <Range
-                        marks={{
-                          1: `$1`,
-                          1000: `$1000`,
-                        }}
-                        min={1}
-                        max={1000}
-                        defaultValue={[1, 1000]}
-                        tipFormatter={(value) => `${value}`}
-                        tipProps={{
-                          placement: "top",
-                          visible: true,
-                        }}
-                        value={price}
-                        onChange={(price) => setPrice(price)}
-                      />
-                      <hr className=" my-5" />
-                      <div className="mt-5">
-                        <h4 className="mb-3">Categories</h4>
-                        <ul className="pl-0 ">
-                          {categories.map((category) => (
-                            <li
-                              style={{
-                                cursor: "pointer",
-                                listStyleType: "none",
-                              }}
-                              key={category}
-                              onClick={() => setCategory(category)}
-                            >
-                              {category}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-6 col-md-9">
-                    <div className="row">
-                      {products.map((product) => (
-                        <Product key={product._id} product={product} col={4} />
-                      ))}
-                    </div>
-                  </div>
-                </Fragment>
-              ) : (
-                products &&
-                products.map((product) => (
-                  <Product key={product._id} product={product} col={4} />
-                ))
-              )}
+              {data?.products?.map((product) => (
+                <ProductItem product={product} columnSize={columnSize} />
+              ))}
             </div>
           </section>
-          {resPerPage <= count && (
-            <div className="d-flex justify-content-center mt-5">
-              <Pagination
-                activePage={currentPage}
-                itemsCountPerPage={resPerPage}
-                totalItemsCount={productsCount}
-                onChange={setCurrentPageNo}
-                nextPageText={"Next"}
-                prevPageText={"Prev"}
-                firstPageText={"First"}
-                lastPageText={"Last"}
-                itemClass="page-item"
-                linkClass="page-link"
-              />
-            </div>
-          )}
-        </Fragment>
-      )}
-    </Fragment>
+
+          <CustomPagination
+            resPerPage={data?.resPerPage}
+            filteredProductsCount={data?.filteredProductsCount}
+          />
+        </div>
+      </div>
+    </>
   );
 };
 

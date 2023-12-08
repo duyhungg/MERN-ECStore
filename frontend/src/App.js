@@ -1,57 +1,31 @@
 import "./App.css";
-import React, { useEffect } from "react";
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes } from "react-router-dom";
 
-import ProtectedRoute from "./components/route/ProtectedRoute";
-import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
-import Home from "./components/Home";
-import ProductDetails from "./components/product/ProductDetails";
-import Login from "./components/user/Login";
-import Register from "./components/user/Register";
-import Profile from "./components/user/Profile";
-import UpdateProfile from "./components/user/UpdateProfile";
-import UpdatePassword from "./components/user/UpdatePassword";
-import ForgotPassword from "./components/user/ForgotPassword";
-import NewPassword from "./components/user/NewPassword";
-import Cart from "./components/cart/Cart";
-import Shipping from "./components/cart/Shipping";
-import { loadUser } from "./actions/userActions";
-import store from "./store";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+
+import useUserRoutes from "./components/routes/userRoutes";
+import useAdminRoutes from "./components/routes/adminRoutes";
 
 function App() {
-  useEffect(() => {
-    store.dispatch(loadUser());
-  }, []);
+  const userRoutes = useUserRoutes();
+  const adminRoutes = useAdminRoutes();
 
   return (
     <Router>
       <div className="App">
+        <Toaster position="top-center" />
         <Header />
-        <div className="container container-fluid">
+
+        <div className="container">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/search/:keyword" element={<Home />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/me"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/me/update" element={<UpdateProfile />} />
-            <Route path="/password/update" element={<UpdatePassword />} />
-            <Route path="/password/forgot" element={<ForgotPassword />} />
-            <Route path="/password/reset/:token" element={<NewPassword />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/shipping" element={<Shipping />}></Route>
+            {userRoutes}
+            {adminRoutes}
           </Routes>
         </div>
+
         <Footer />
       </div>
     </Router>

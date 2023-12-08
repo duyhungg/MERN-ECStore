@@ -1,122 +1,122 @@
-import React, { Fragment } from "react";
-import Loading from "../layout/Loading";
-import { useAlert } from "react-alert";
-import { useDispatch, useSelector } from "react-redux";
-import { getProductDetail, clearError } from "../../actions/productActions";
+import React from "react";
 import MetaData from "../layout/MetaData";
-import { addItemToCart, removeItemFromCart } from "../../actions/cartActions";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import { setCartItem, removeCartItem } from "../../redux/features/cartSlice";
 
 const Cart = () => {
   const dispatch = useDispatch();
-  const { cartItems } = useSelector((state) => state.cart);
   const navigate = useNavigate();
-  const removeCartItemHandler = (id) => {
-    dispatch(removeItemFromCart(id));
-  };
 
-  const increaseQty = (id, quantity, stock) => {
+  const { cartItems } = useSelector((state) => state.cart);
+
+  const increseQty = (item, quantity) => {
     const newQty = quantity + 1;
 
-    if (newQty > stock) return;
+    if (newQty > item?.stock) return;
 
-    dispatch(addItemToCart(id, newQty));
+    setItemToCart(item, newQty);
   };
 
-  const decreaseQty = (id, quantity) => {
+  const decreseQty = (item, quantity) => {
     const newQty = quantity - 1;
 
     if (newQty <= 0) return;
 
-    dispatch(addItemToCart(id, newQty));
+    setItemToCart(item, newQty);
+  };
+
+  const setItemToCart = (item, newQty) => {
+    const cartItem = {
+      product: item?.product,
+      name: item?.name,
+      price: item?.price,
+      image: item?.image,
+      stock: item?.stock,
+      quantity: newQty,
+    };
+
+    dispatch(setCartItem(cartItem));
+  };
+
+  const removeCartItemHandler = (id) => {
+    dispatch(removeCartItem(id));
   };
 
   const checkoutHandler = () => {
-    navigate("/login?redirect=shipping");
+    navigate("/shipping");
   };
 
   return (
-    <Fragment>
+    <>
       <MetaData title={"Your Cart"} />
-      {cartItems.length === 0 ? (
+      {cartItems?.length === 0 ? (
         <h2 className="mt-5">Your Cart is Empty</h2>
       ) : (
-        <Fragment>
+        <>
           <h2 className="mt-5">
-            Your Cart: <b>{cartItems.length} items</b>
+            Your Cart: <b>{cartItems?.length} items</b>
           </h2>
 
           <div className="row d-flex justify-content-between">
             <div className="col-12 col-lg-8">
-              {cartItems.map((item) => (
-                <Fragment>
+              {cartItems?.map((item) => (
+                <>
                   <hr />
-
-                  <div className="cart-item" key={item.product}>
+                  <div className="cart-item" data-key="product1">
                     <div className="row">
                       <div className="col-4 col-lg-3">
                         <img
-                          src={item.image}
+                          src={item?.image}
                           alt="Laptop"
                           height="90"
                           width="115"
                         />
                       </div>
-
                       <div className="col-5 col-lg-3">
-                        <Link to={`/products/${item.product}`}>
-                          {item.name}
+                        <Link to={`/products/${item?.product}`}>
+                          {" "}
+                          {item?.name}{" "}
                         </Link>
                       </div>
-
                       <div className="col-4 col-lg-2 mt-4 mt-lg-0">
-                        <p id="card_item_price">${item.price}</p>
+                        <p id="card_item_price">${item?.price}</p>
                       </div>
-
                       <div className="col-4 col-lg-3 mt-4 mt-lg-0">
                         <div className="stockCounter d-inline">
                           <span
                             className="btn btn-danger minus"
-                            onClick={() =>
-                              decreaseQty(item.product, item.quantity)
-                            }
+                            onClick={() => decreseQty(item, item.quantity)}
                           >
-                            -
+                            {" "}
+                            -{" "}
                           </span>
-
                           <input
                             type="number"
                             className="form-control count d-inline"
-                            value={item.quantity}
-                            readOnly
+                            value={item?.quantity}
+                            readonly
                           />
-
                           <span
                             className="btn btn-primary plus"
-                            onClick={() =>
-                              increaseQty(
-                                item.product,
-                                item.quantity,
-                                item.stock
-                              )
-                            }
+                            onClick={() => increseQty(item, item.quantity)}
                           >
-                            +
+                            {" "}
+                            +{" "}
                           </span>
                         </div>
                       </div>
-
                       <div className="col-4 col-lg-1 mt-4 mt-lg-0">
                         <i
                           id="delete_cart_item"
                           className="fa fa-trash btn btn-danger"
-                          onClick={() => removeCartItemHandler(item.product)}
+                          onClick={() => removeCartItemHandler(item?.product)}
                         ></i>
                       </div>
                     </div>
                   </div>
                   <hr />
-                </Fragment>
+                </>
               ))}
             </div>
 
@@ -125,12 +125,9 @@ const Cart = () => {
                 <h4>Order Summary</h4>
                 <hr />
                 <p>
-                  Subtotal:{" "}
+                  Units:{" "}
                   <span className="order-summary-values">
-                    {cartItems.reduce(
-                      (acc, item) => acc + Number(item.quantity),
-                      0
-                    )}{" "}
+                    {cartItems?.reduce((acc, item) => acc + item?.quantity, 0)}{" "}
                     (Units)
                   </span>
                 </p>
@@ -139,18 +136,17 @@ const Cart = () => {
                   <span className="order-summary-values">
                     $
                     {cartItems
-                      .reduce(
-                        (acc, item) => acc + item.quantity * item.price,
+                      ?.reduce(
+                        (acc, item) => acc + item?.quantity * item.price,
                         0
                       )
                       .toFixed(2)}
                   </span>
                 </p>
-
                 <hr />
                 <button
                   id="checkout_btn"
-                  className="btn btn-primary btn-block"
+                  className="btn btn-primary w-100"
                   onClick={checkoutHandler}
                 >
                   Check out
@@ -158,9 +154,9 @@ const Cart = () => {
               </div>
             </div>
           </div>
-        </Fragment>
+        </>
       )}
-    </Fragment>
+    </>
   );
 };
 

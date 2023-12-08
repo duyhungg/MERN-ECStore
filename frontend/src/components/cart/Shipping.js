@@ -1,118 +1,139 @@
-import React, { Fragment, useState } from "react";
-import MetaData from "../layout/MetaData";
-import languageNames from "countries-list/minimal/languages.native.min";
+import React, { useEffect, useState } from "react";
+import { countries } from "countries-list";
 import { useDispatch, useSelector } from "react-redux";
-import { saveShippingInfo } from "../../actions/cartActions";
+import { saveShippingInfo } from "../../redux/features/cartSlice";
 import { useNavigate } from "react-router-dom";
-import { Country, State, City } from "country-state-city";
-const Shipping = () => {
-  const countriesList = Object.values(Country.getAllCountries());
-  //console.log(countries2to3);
-  const { shippingInfo } = useSelector((state) => state.cart);
-  // console.log(Country.getAllCountries());
-  // console.log(State.getAllStates());
+import MetaData from "../layout/MetaData";
+import CheckoutSteps from "./CheckoutSteps";
 
-  const [address, setAddress] = useState(shippingInfo.address);
-  const [city, setCity] = useState(shippingInfo.city);
-  const [postalCode, setPostalCode] = useState(shippingInfo.postalCode);
-  const [phoneNo, setPhoneNo] = useState(shippingInfo.phoneNo);
-  const [country, setCountry] = useState(shippingInfo.country);
+const Shipping = () => {
+  const countriesList = Object.values(countries);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const submitHandler = (e) => {
+
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [phoneNo, setPhoneNo] = useState("");
+  const [country, setCountry] = useState("");
+
+  const { shippingInfo } = useSelector((state) => state.cart);
+
+  useEffect(() => {
+    if (shippingInfo) {
+      setAddress(shippingInfo?.address);
+      setCity(shippingInfo?.city);
+      setZipCode(shippingInfo?.zipCode);
+      setPhoneNo(shippingInfo?.phoneNo);
+      setCountry(shippingInfo?.country);
+    }
+  }, [shippingInfo]);
+
+  const submiHandler = (e) => {
     e.preventDefault();
 
-    dispatch(saveShippingInfo({ address, city, phoneNo, postalCode, country }));
-    navigate("/confirm");
+    dispatch(saveShippingInfo({ address, city, phoneNo, zipCode, country }));
+    navigate("/confirm_order");
   };
 
   return (
-    <Fragment>
+    <>
       <MetaData title={"Shipping Info"} />
 
-      {/* <CheckoutSteps shipping /> */}
+      <CheckoutSteps shipping />
 
-      <div className="row wrapper">
+      <div className="row wrapper mb-5">
         <div className="col-10 col-lg-5">
-          <form className="shadow-lg" onSubmit={submitHandler}>
-            <h1 className="mb-4">Shipping Info</h1>
-            <div className="form-group">
-              <label htmlFor="address_field">Address</label>
+          <form className="shadow rounded bg-body" onSubmit={submiHandler}>
+            <h2 className="mb-4">Shipping Info</h2>
+            <div className="mb-3">
+              <label htmlFor="address_field" className="form-label">
+                Address
+              </label>
               <input
                 type="text"
                 id="address_field"
                 className="form-control"
+                name="address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="city_field">City</label>
+            <div className="mb-3">
+              <label htmlFor="city_field" className="form-label">
+                City
+              </label>
               <input
                 type="text"
                 id="city_field"
                 className="form-control"
+                name="city"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="phone_field">Phone No</label>
+            <div className="mb-3">
+              <label htmlFor="phone_field" className="form-label">
+                Phone No
+              </label>
               <input
-                type="phone"
+                type="tel"
                 id="phone_field"
                 className="form-control"
+                name="phoneNo"
                 value={phoneNo}
                 onChange={(e) => setPhoneNo(e.target.value)}
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="postal_code_field">Postal Code</label>
+            <div className="mb-3">
+              <label htmlFor="zip_code_field" className="form-label">
+                Zip Code
+              </label>
               <input
                 type="number"
-                id="postal_code_field"
+                id="zip_code_field"
                 className="form-control"
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
+                name="zipCode"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="country_field">Country</label>
+            <div className="mb-3">
+              <label htmlFor="country_field" className="form-label">
+                Country
+              </label>
               <select
                 id="country_field"
-                className="form-control"
+                className="form-select"
+                name="country"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
                 required
               >
-                {countriesList.map((country) => (
-                  <option key={country.name} value={country.name}>
-                    {country.name}
+                {countriesList?.map((country) => (
+                  <option key={country?.name} value={country?.name}>
+                    {country?.name}
                   </option>
                 ))}
               </select>
             </div>
 
-            <button
-              id="shipping_btn"
-              type="submit"
-              className="btn btn-block py-3"
-            >
+            <button id="shipping_btn" type="submit" className="btn w-100 py-2">
               CONTINUE
             </button>
           </form>
         </div>
       </div>
-    </Fragment>
+    </>
   );
 };
 
